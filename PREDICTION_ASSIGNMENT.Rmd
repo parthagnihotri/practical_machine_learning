@@ -87,12 +87,6 @@ treeConfMatrix
 
 Accuracy for the model is 0.7133.
 
-```{r, message=FALSE, warning=FALSE}
-plot(treeConfMatrix$table, 
-     main="Classification Tree Model", 
-     sub=paste("Accuracy-", round(treeConfMatrix$overall['Accuracy'],4)))
-```
-
 ## Random Forests
 
 ```{r, message=FALSE, warning=FALSE}
@@ -108,12 +102,6 @@ rfConfMatrix
 ```
 
 Accuracy for the model is 0.9927.
-
-```{r, message=FALSE, warning=FALSE}
-plot(rfConfMatrix$table, 
-     main="Random Forests Model", 
-     sub=paste("Accuracy-", round(rfConfMatrix$overall['Accuracy'],4)))
-```
 
 ### Generalized Boosted Model (GBM)
 
@@ -131,19 +119,30 @@ gbmConfMatrix
 
 Accuracy for the model is 0.9584.
 
+## Conclusion
+
+Based on the previous section, it is clear that the Random Forests model is best among three models with accuracy of 0.9927.
+
 ```{r, message=FALSE, warning=FALSE}
+par(mfrow=c(1,3))
+
+plot(treeConfMatrix$table, 
+     main="Classification Tree Model", 
+     sub=paste("Accuracy-", round(treeConfMatrix$overall['Accuracy'],4)))
+
+plot(rfConfMatrix$table, 
+     main="Random Forests Model", 
+     sub=paste("Accuracy-", round(rfConfMatrix$overall['Accuracy'],4)))
+
 plot(gbmConfMatrix$table, 
      main="Generalized Boosted Model (GBM)", 
      sub=paste("Accuracy-", round(gbmConfMatrix$overall['Accuracy'],4)))
 ```
 
-## Conclusion
-
-Based on the previous section, it is clear that the Random Forests model is best among three models with accuracy of 0.9927.
-
 ## Applying best model to test data
 
 ```{r, message=FALSE, warning=FALSE}
+# Predict value of "classe" variable based on testing data
 predictRFTestData <- predict(rfModel, newdata=testingData)
 predictRFTestData
 ```
