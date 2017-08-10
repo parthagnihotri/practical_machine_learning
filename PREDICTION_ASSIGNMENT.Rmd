@@ -1,0 +1,163 @@
+---
+title: "Prediction Assignment"
+author: "Parth Agnihotri"
+date: "6 August 2017"
+output: html_document
+---
+
+## Overview
+
+This course project is to predict the class of exercise the individual was performing using use machine learning algorithms. Data for the project is based on devices such as Jawbone Up, Nike FuelBand, and Fitbit, using which now it is possible to collect a large amount of data about personal activity relatively inexpensively. 
+
+Variable "classe" classifies the correct and incorrect outcomes of A, B, C, D, and E categories. 
+
+1. Class A - exactly according to the specification 
+2. Class B - throwing the elbows to the front 
+3. Class C - lifting the dumbbell only halfway 
+4. Class D - lowering the dumbbell only halfway 
+5. Class E - throwing the hips to the front
+
+Analysis for the project will identify the best model (with highest accuracy) and use it to predict "classe" variable in the test data.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(caret)
+library(RCurl)
+```
+
+## Data Loading and Cleaup
+
+Data for this project is available on following locations:
+
+* Training data: https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+* Test data: https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+```{r}
+# Download Training and Testing data
+trainingData <- read.csv(text = getURL("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"))
+testingData <- read.csv(text = getURL("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"))
+
+dim(trainingData)
+dim(testingData)
+
+# Identify and remove NA columns. Also remove columns which has user details
+# as these columns are not useful as predictors.
+cols <- names(testingData[,colSums(is.na(testingData)) == 0])[8:59]
+trainingData <- trainingData[,c(cols,"classe")]
+testingData <- testingData[,c(cols,"problem_id")]
+dim(trainingData)
+dim(testingData)
+
+```
+
+## Partition Data into Training and Testing Sets
+
+70 % of the data is used as Training Set and rest 30 % is used as Test Set.
+
+```{r}
+set.seed(123)
+inTrain <- createDataPartition(trainingData$classe, p=0.7, list=FALSE)
+training <- trainingData[inTrain,]
+testing <- trainingData[-inTrain,]
+dim(training) 
+dim(testing)
+```
+
+## Prediction Models
+
+For analysis, this report has built following three models which were discussed in the "Practical Machine Learning" class.
+
+1. Classification Tree
+2. Random Forests
+3. Generalized Boosted Model (GBM)
+
+### Classification Tree
+
+```{r, message=FALSE, warning=FALSE}
+# Cross-validation at 5-fold
+fitControl <- trainControl(method="cv", number=5, allowParallel=T)
+# Train model
+treeModel <- train(classe~.,data=training, method="rpart",trControl=fitControl, tuneLength = 10)
+
+# Predict by applying model to testing data
+predictTree <- predict(treeModel, newdata=testing)
+treeConfMatrix <- confusionMatrix(predictTree, testing$classe)
+treeConfMatrix
+```
+
+Accuracy for the model is 0.7133.
+
+```{r, message=FALSE, warning=FALSE}
+plot(treeConfMatrix$table, 
+     main="Classification Tree Model", 
+     sub=paste("Accuracy-", round(treeConfMatrix$overall['Accuracy'],4)))
+```
+
+## Random Forests
+
+```{r, message=FALSE, warning=FALSE}
+# Cross-validation at 5-fold
+fitControl <- trainControl(method="cv", number=5, allowParallel=T)
+# Train model
+rfModel <- train(classe~.,data=training, method="rf", trControl=fitControl, verbose=F)
+
+# Predict by applying model to testing data
+predictRF <- predict(rfModel, newdata=testing)
+rfConfMatrix <- confusionMatrix(predictRF, testing$classe)
+rfConfMatrix
+```
+
+Accuracy for the model is 0.9927.
+
+```{r, message=FALSE, warning=FALSE}
+plot(rfConfMatrix$table, 
+     main="Random Forests Model", 
+     sub=paste("Accuracy-", round(rfConfMatrix$overall['Accuracy'],4)))
+```
+
+### Generalized Boosted Model (GBM)
+
+```{r, message=FALSE, warning=FALSE}
+# Cross-validation at 5-fold
+fitControl <- trainControl(method="cv", number=5, allowParallel=T)
+# Train model
+gbmModel <- train(classe~.,data=training, method="gbm",trControl=fitControl, verbose=F)
+
+# Predict by applying model to testing data
+predictGBM <- predict(gbmModel, newdata=testing)
+gbmConfMatrix <- confusionMatrix(predictGBM, testing$classe)
+gbmConfMatrix
+```
+
+Accuracy for the model is 0.9584.
+
+```{r, message=FALSE, warning=FALSE}
+plot(gbmConfMatrix$table, 
+     main="Generalized Boosted Model (GBM)", 
+     sub=paste("Accuracy-", round(gbmConfMatrix$overall['Accuracy'],4)))
+```
+
+## Conclusion
+
+Based on the previous section, it is clear that the Random Forests model is best among three models with accuracy of 0.9927.
+
+## Applying best model to test data
+
+```{r, message=FALSE, warning=FALSE}
+predictRFTestData <- predict(rfModel, newdata=testingData)
+predictRFTestData
+```
+
+## Appendix
+
+```{r}
+# Classification Tree Model
+treeModel$finalModel
+
+# Random Forest Model
+rfModel$finalModel
+
+# GBM Model
+gbmModel$finalModel
+```
+
